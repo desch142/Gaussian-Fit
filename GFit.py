@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy import odr
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, find_peaks_cwt
 import matplotlib.pyplot as plt
 import warnings
 
