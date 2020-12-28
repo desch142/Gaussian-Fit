@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy import odr
+from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 
 class GFit():
@@ -9,9 +11,11 @@ class GFit():
         self.y = y
         self.x_err = x_err
         self.y_err = y_err
+        #self.peaks, self.dips = self.get_peaks_dips()
 
-    def get_peaks_dips(self):
+    def get_peaks_dips(self, height, prominence, distance, ):
         pass
+        #return [peaks, dips]
 
     def get_guess(self):
         pass
