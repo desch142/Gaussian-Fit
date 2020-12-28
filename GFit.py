@@ -5,5 +5,5 @@ class GFit():
     def __init__(self, number):
         self.x = number
 
-test = GFit(5)
+test = GFit(6)
 print(test.x)
