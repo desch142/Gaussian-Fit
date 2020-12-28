@@ -2,8 +2,8 @@ import numpy as np
 
 
 class GFit():
-    def __init__(self, number):
-        self.x = number
+    def __init__(self, x, y, x_err, y_err):
+        pass
 
-test = GFit(6)
-print(test.x)
+
+
