@@ -14,7 +14,8 @@ class GFit():
         self.x_err = x_err
         self.y_err = y_err
 
-    def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=True,stepsize=0.01, max_iter=1000):
+    def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=True,
+                               stepsize=0.01, max_iter=1000):
         """
         This method aims to find a wanted number of peaks and automatically finds peaks for further computations
 
@@ -36,7 +37,6 @@ class GFit():
                 plt.plot(self.x, y_data)
         else:
             y_data = self.y
-
 
         pks, pks_dict = find_peaks(y_data, prominence=p)
         n = len(pks)
@@ -61,7 +61,8 @@ class GFit():
 
     def smoothing(self, window_size):
         """
-        This method smooths data using np.convolve. It is useful if the data is ver noisy.
+        This method smooths data using np.convolve. It is useful if the data is ver noisy. In otherwords a moving average
+        is calculated to smooth the data.
         :param window_size: int; parameter for the window size of the convolution
         :return: smoothed data
         """
