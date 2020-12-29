@@ -7,7 +7,7 @@ import warnings
 
 
 class GFit():
-    def __init__(self, x, y, x_err, y_err):
+    def __init__(self, x, y, x_err=None, y_err=None):
         self.x = x
         self.y = y
         self.x_err = x_err
@@ -32,7 +32,6 @@ class GFit():
             pks, pks_dict = find_peaks(self.y, prominence=p)
 
             n = len(pks)
-            print(n)
             counter += 1
         print("#####")
         print(f"{n}/{number_peaks} peaks found")
@@ -48,4 +47,11 @@ class GFit():
     def plot_save(self, xlabel, ylabel, title, savename):
         pass
 
-
+from noisy_data_create import noisy_gaussian
+x = np.linspace(-2,6,10000)
+y = noisy_gaussian(x, 2, 1)
+test = GFit(x,y)
+plt.plot(x, y, 'x')
+xpks, ypks = test.get_peaks_dips(1)
+plt.plot(xpks, ypks, 'x')
+plt.show()
