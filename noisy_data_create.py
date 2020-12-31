@@ -2,9 +2,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #x = np.linspace(-2,6,10000)
-def noisy_gaussian(x, mu, sig):
-    y = 2*np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.))) + 5*np.exp(-np.power(x - 5, 2.) / (2 * np.power(sig, 2.)))
-    y += np.random.normal(0, 0.4, len(x))
+
+#get fake data for sum of gaussians
+#takes list of amplitudes "amp", centers "mu" and widths "sig"
+def noisy_gaussian(x, amp, mu, sig):
+    y=0
+    for a, m, s in zip(amp, mu, sig):
+        y += a*np.exp(-np.power(x - m, 2.) / (2 * np.power(s, 2.)))
+
+    #finally add noise
+    y += np.random.normal(0, 0.2, len(x))
     return y
 
 #y = noisy_gaussian(x, 2, 1)
