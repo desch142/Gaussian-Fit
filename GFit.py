@@ -14,7 +14,7 @@ class GFit():
         self.x_err = x_err
         self.y_err = y_err
 
-    def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=True,
+    def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=False,
                                stepsize=0.01, max_iter=1000, plotcheck=False):
         """
         This method aims to find a wanted number of peaks and automatically finds peaks for further computations
@@ -38,8 +38,8 @@ class GFit():
             y_data = self.y
 
         #####Find peaks#####
-        #Find number_peaks peaks by iteratively varying the prominence
-        #and using scipy.signal.find_peaks(data, prominence)
+        # Find number_peaks peaks by iteratively varying the prominence
+        # and using scipy.signal.find_peaks(data, prominence)
         p = 0.5
         pks, pks_dict = find_peaks(y_data, prominence=p)
         n = len(pks)
@@ -53,7 +53,7 @@ class GFit():
                 message = "Due to same prominences peaks could not be resolved, peakfind still executed"
                 warnings.warn(message, category=Warning, stacklevel=2)
                 break
-            p += diff * stepsize # change the prominence into the "right" direction
+            p += diff * stepsize    # change the prominence into the "right" direction
             pks, pks_dict = find_peaks(y_data, prominence=p)
 
             n = len(pks)
@@ -65,32 +65,33 @@ class GFit():
         x_pks, y_pks=self.x[pks], y_data[pks]
 
         #####Find dips#####
-        #Find the number_peaks-1 dips by finding the minimum in between the peaks
+        # Find the number_peaks-1 dips by finding the minimum in between the peaks
 
-        #list to store dips indices
-        dps=[]
+        # list to store dips indices
+        #dps=[]
 
-        for i in range(0, len(pks)-1):
+        #for i in range(0, len(pks)-1):
             #find index of dip between pks[i] and pks[i+1] and append to dps list
             #add pks[i] since index of y_data_btw starts at zero
-            dps.append(np.argmin(y_data[pks[i]:pks[i+1]])+pks[i])
+        #    dps.append(np.argmin(y_data[pks[i]:pks[i+1]])+pks[i])
 
+        # proposal for the dip find
+        dps = [np.argmin(y_data[d[0]:d[1]]) + pks[idx] for idx, d in enumerate(zip(pks[:-1], pks[1:]))]
 
         print(f"Dipfinder Message: {len(dps)}/{number_peaks-1} dips found")
 
-        #x- and y-values of dips for plotting
+        # x- and y-values of dips for plotting
         x_dps, y_dps=self.x[dps], y_data[dps]
 
-        #optionally plot data, smoothed_data, peaks and dips
+        # optionally plot data, smoothed_data, peaks and dips
         if plotcheck:
             plt.plot(self.x, self.y, label="Data")
             if smoothing & show_smoothing:
-                plt.plot(self.x, y_data)
+                plt.plot(self.x, y_data, label="Smoothed Data")
             plt.plot(x_pks, y_pks,linestyle='', marker="^",markersize=12, label=f"{n}/{number_peaks} Peaks")
             plt.plot(x_dps, y_dps,linestyle='', marker="v",markersize=12, label=f"{len(dps)}/{number_peaks-1} Dips")
             plt.legend()
 
-        #return indices of peaks and dips
         return [pks, dps]
 
     def smoothing(self, window_size):
@@ -104,8 +105,36 @@ class GFit():
         return y_data
 
 
-    def get_guess(self):
-        pass
+    def get_guess(self, peaks_idx, dips_idx):
+
+        left = self.x[:peaks_idx[0]]
+        right = self.x[peaks_idx[-1]:]
+        len_left = len(left)
+        len_right = len(right)
+
+        diff_lft_peak_dip = dips_idx[0] - peaks_idx[0]
+
+        diff_rght_peak_dip = peaks_idx[-1] - dips_idx[-1]
+
+        if len_left < diff_lft_peak_dip:
+            lft_idx = int(len_left / 2)
+        else:
+            lft_idx = diff_lft_peak_dip
+
+        if len_right < diff_rght_peak_dip:
+            rght_idx = int(len_right / 2) + peaks_idx[-1]
+        else:
+            rght_idx = diff_rght_peak_dip + peaks_idx[-1]
+
+
+        plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
+        plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
+        plt.legend()
+
+        #TODO:
+        # 1. use zip() for the calculation of the peak variance
+        # 2. return the guess e.g. [mean1,var1,mean2,var2,...]
+        # 3. make it possible to enable plot or not (function parameter)
 
     def fit(self):
         pass
@@ -121,9 +150,10 @@ print(np.random.rand(5)*0.75+np.arange(1,10,9/5))
 
 
 #test peak/dipfinder
-test = GFit(x,y)
+test = GFit(x, y)
 
 #find peaks+dips and plot
-test.get_peaks_dips_default(5, smoothing=True, window_size=150, plotcheck=True)
-
+pks, dps = test.get_peaks_dips_default(4, smoothing=True, window_size=150, plotcheck=True, show_smoothing=True)
+test.get_guess(pks, dps)
 plt.show()
+
