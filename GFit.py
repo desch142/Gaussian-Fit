@@ -94,6 +94,7 @@ class GFit():
 
         return [pks, dps]
 
+
     def smoothing(self, window_size):
         """
         This method smooths data using np.convolve. It is useful if the data is ver noisy. In otherwords a moving average
