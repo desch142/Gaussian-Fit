@@ -81,7 +81,7 @@ class GFit():
         print(f"Dipfinder Message: {len(dps)}/{number_peaks-1} dips found")
 
         # x- and y-values of dips for plotting
-        x_dps, y_dps=self.x[dps], y_data[dps]
+        x_dps, y_dps = self.x[dps], y_data[dps]
 
         # optionally plot data, smoothed_data, peaks and dips
         if plotcheck:
@@ -105,8 +105,18 @@ class GFit():
         return y_data
 
 
-    def get_guess(self, peaks_idx, dips_idx):
+    def get_guess(self, peaks_idx, dips_idx, plotcheck=False):
+        """
+        This method guesses the means and the variances for the gaussian fit
+        :param peaks_idx: list int; a list/numpy array of indices where the peaks lie
+        :param dips_idx: list int; a list/numpy array of indices where the infered dips lie
+        :param plotcheck: boolean; if the 'dip' before the first peak and the 'dip' after last peak should be displayed
+        for sanity checks
+        :return: returns a list of tuples where each tuple consists of (mean, var) as a guess for the parameters for the fit
+        """
 
+        # First add 'dips' before the first peak and after the last peak
+        # with this the method will calculate the variance of the data in between the dips.
         left = self.x[:peaks_idx[0]]
         right = self.x[peaks_idx[-1]:]
         len_left = len(left)
@@ -126,15 +136,19 @@ class GFit():
         else:
             rght_idx = diff_rght_peak_dip + peaks_idx[-1]
 
+        # merge all the dips
+        dips = [lft_idx] + dips_idx + [rght_idx]
 
-        plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
-        plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
-        plt.legend()
+        var = [np.var(self.x[d1:d2]) for d1, d2 in zip(dips[:-1], dips[1:])]
+        mean = self.x[peaks_idx]
+        guess = [g for g in zip(mean, var)]
 
-        #TODO:
-        # 1. use zip() for the calculation of the peak variance
-        # 2. return the guess e.g. [mean1,var1,mean2,var2,...]
-        # 3. make it possible to enable plot or not (function parameter)
+        if plotcheck:
+            plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
+            plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
+            plt.legend()
+
+        return guess
 
     def fit(self):
         pass
@@ -142,8 +156,11 @@ class GFit():
     def plot_save(self, xlabel, ylabel, title, savename):
         pass
 
+
+np.random.seed(1231)
 from noisy_data_create import noisy_gaussian
 #create random sum of 5 gaussians
+
 x = np.linspace(0,10,10000)
 y = noisy_gaussian(x, amp=1+np.random.rand(5)*10, mu=np.random.rand(5)*0.75+np.arange(1,9,8/5), sig=0.05+np.random.rand(5))*0.5
 print(np.random.rand(5)*0.75+np.arange(1,10,9/5))
@@ -154,6 +171,6 @@ test = GFit(x, y)
 
 #find peaks+dips and plot
 pks, dps = test.get_peaks_dips_default(4, smoothing=True, window_size=150, plotcheck=True, show_smoothing=True)
-test.get_guess(pks, dps)
+test.get_guess(pks, dps, plotcheck=True)
 plt.show()
 
