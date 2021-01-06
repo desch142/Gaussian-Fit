@@ -140,18 +140,30 @@ class GFit():
         # merge all the dips
         dips = [lft_idx] + dips_idx + [rght_idx]
 
+        #guess for offset simply taking minimum value in data
+        guess_offset = np.min(self.y)
+
+        #guess for gaussians
         var = [np.var(self.x[d1:d2]) for d1, d2 in zip(dips[:-1], dips[1:])]
+        amp= self.y[peaks_idx]-guess_offset
         mean = self.x[peaks_idx]
-        guess = [g for g in zip(mean, var)]
+
+        guess_gaussians = [g for g in zip(amp, mean, var)]
 
         if plotcheck:
             plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
             plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
+            #hier will ich noch den guess plotten zusätzlich
             plt.legend()
 
-        return guess
+        return guess_offset, guess_gaussians
+
+    def fitfunction(self, x, offset, gauss_params):
+        #hier kommt dann die fitfunktion rein
+        return 0
 
     def fit(self):
+        #to do: test der beiden fit-methoden
         pass
 
     def plot_save(self, xlabel, ylabel, title, savename):
@@ -172,6 +184,8 @@ test = GFit(x, y)
 
 #find peaks+dips and plot
 pks, dps = test.get_peaks_dips_default(4, smoothing=True, window_size=150, plotcheck=True, show_smoothing=True)
-test.get_guess(pks, dps, plotcheck=True)
+offset, guess=test.get_guess(pks, dps, plotcheck=True)
+print(offset)
+print(guess)
 plt.show()
 
