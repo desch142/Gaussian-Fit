@@ -150,33 +150,45 @@ class GFit():
 
         guess_gaussians = [g for g in zip(amp, mean, var)]
 
+        guess=np.append(guess_offset, guess_gaussians)
+
         if plotcheck:
             plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
             plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
-            #hier will ich noch den guess plotten zusätzlich
+            #plot guess
+            x_g=np.linspace(self.x.min(), self.x.max(),10**5)
+            y_g=self.fitfunction(x_g, guess)
+            plt.plot(x_g, y_g, label='Initial guess', linestyle='--')
             plt.legend()
 
-        return guess_offset, guess_gaussians
+        return guess
 
-    def fitfunction(self, x, offset, gauss_params):
-        #hier kommt dann die fitfunktion rein
-        return 0
+    def fitfunction(self, x, params):
+        y=0
+        #add offset
+        y+=params[0]
 
-    def fit(self):
-        #to do: test der beiden fit-methoden
+        #add sum of gaussians
+        for amp, mean, var in zip(params[1::3], params[2::3], params[3::3]):
+            y+=amp*np.exp(-np.power(x - mean, 2.) / (2 * np.power(var, 2.)))
+
+        return y
+
+    def fit(self, guess):
+
         pass
 
     def plot_save(self, xlabel, ylabel, title, savename):
         pass
 
-
-np.random.seed(1231)
+plt.clf()
+#np.random.seed(1231)
 from noisy_data_create import noisy_gaussian
 #create random sum of 5 gaussians
 
 x = np.linspace(0,10,10000)
-y = noisy_gaussian(x, amp=1+np.random.rand(5)*10, mu=np.random.rand(5)*0.75+np.arange(1,9,8/5), sig=0.05+np.random.rand(5))*0.5
-print(np.random.rand(5)*0.75+np.arange(1,10,9/5))
+y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
+
 
 
 #test peak/dipfinder
@@ -184,8 +196,9 @@ test = GFit(x, y)
 
 #find peaks+dips and plot
 pks, dps = test.get_peaks_dips_default(4, smoothing=True, window_size=150, plotcheck=True, show_smoothing=True)
-offset, guess=test.get_guess(pks, dps, plotcheck=True)
-print(offset)
+guess=test.get_guess(pks, dps, plotcheck=True)
+#print(offset)
 print(guess)
+print(guess[1::3])
 plt.show()
 
