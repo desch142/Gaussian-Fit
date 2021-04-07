@@ -156,14 +156,14 @@ class GFit():
             plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
             plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
             #plot guess
-            x_g=np.linspace(self.x.min(), self.x.max(),10**5)
-            y_g=self.fitfunction(x_g, guess)
+            x_g=np.linspace(self.x.min(), self.x.max(), 10**5)
+            y_g=self.fitfunction(x_g, *guess)
             plt.plot(x_g, y_g, label='Initial guess', linestyle='--')
             plt.legend()
 
         return guess
 
-    def fitfunction(self, x, params):
+    def fitfunction(self, x, *params):
         y=0
         #add offset
         y+=params[0]
@@ -174,31 +174,92 @@ class GFit():
 
         return y
 
-    def fit(self, guess):
+    def fit(self, guess, plotcheck=False, fitparamsname=None):
+        #Use standard Chi2 fit if there are no x-errors:
+        if self.x_err is None:
+            popt, pconv = curve_fit(self.fitfunction, self.x, self.y,sigma=self.y_err, p0=guess, maxfev=10**6)
 
-        pass
+            # extract fit parameters
+            fit = popt  # value
+            dfit = np.sqrt(pconv.diagonal())  # error
+            parameters = np.column_stack((fit, dfit))
+
+
+
+            #fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
+            #fitted_y = self.fitfunction(fitted_x, *popt)
+
+            # plot fit and data
+            #pl.plot(x, y, linestyle='none', marker='+', label='Daten')
+            #plt.plot(fitted_x, fitted_y, linestyle='-',color="black", marker=' ', label='Fit')
+            #plt.legend()
+        else:
+            #fit using ODR
+            #scipy odr requires a different format for the fit function
+            def fitfunction_odr(p, x):
+                return self.fitfunction(x, *p)
+            func=odr.Model(fitfunction_odr)
+            data=odr.RealData(self.x,self.y,sx=self.x_err, sy=self.y_err)
+            odrfit=odr.ODR(data, func, beta0=guess, maxit=10**3)
+            output=odrfit.run()
+            fit=output.beta
+            dfit=output.sd_beta
+            parameters = np.column_stack((fit, dfit))
+
+        #plot fit
+        if plotcheck==True:
+            fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
+            fitted_y = self.fitfunction(fitted_x, *fit)
+
+            # plot fit
+            plt.plot(fitted_x, fitted_y, linestyle='-', color="black", marker=' ', label='Fit')
+            plt.legend()
+
+        #save fitparameters as table in txt file
+        if fitparamsname!=None:
+            table=np.empty((len(parameters)+1,3), dtype=object)
+            table[0,0]=""
+            table[0,1:3]=["Value", "Error"]
+            table[1, 0] = "Offset"
+            for i in range(0,len(parameters)-1,3):
+                table[i+2,0]=f"Gaussian {int(i/3+1)}: Amplitude"
+                table[i+3, 0] = f"Gaussian {int(i/3+1)}: Mean"
+                table[i+4, 0] = f"Gaussian {int(i/3+1)}: SDV"
+            print(len(parameters)-1)
+            table[1:,1:3]=parameters
+            np.savetxt(fitparamsname,table,delimiter="\t", fmt="%s")
+
+        #return fitparameters for further use
+        return parameters
 
     def plot_save(self, xlabel, ylabel, title, savename):
         pass
 
 plt.clf()
-#np.random.seed(1231)
+np.random.seed(1231)
 from noisy_data_create import noisy_gaussian
 #create random sum of 5 gaussians
 
-x = np.linspace(0,10,10000)
+x = np.linspace(0,10,200)
 y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
-
+xerr = np.random.rand(len(x))
+yerr = np.random.rand(len(x))
 
 
 #test peak/dipfinder
-test = GFit(x, y)
+test = GFit(x, y,  x_err=xerr, y_err=yerr)
 
 #find peaks+dips and plot
-pks, dps = test.get_peaks_dips_default(4, smoothing=True, window_size=150, plotcheck=True, show_smoothing=True)
-guess=test.get_guess(pks, dps, plotcheck=True)
-#print(offset)
-print(guess)
-print(guess[1::3])
+pks, dps = test.get_peaks_dips_default(4, smoothing=False, window_size=150, plotcheck=True, show_smoothing=False)
+
+#get guess
+guess=test.get_guess(pks, dps, plotcheck=False)
+
+#do fit and save fitparams in txt file
+fitparams=test.fit(guess, plotcheck=True, fitparamsname='test_fitparams.txt')
+
+
+#TODO: write plot function that saves data+fit to pdf file
+
 plt.show()
 
