@@ -215,24 +215,33 @@ class GFit():
             plt.plot(fitted_x, fitted_y, linestyle='-', color="black", marker=' ', label='Fit')
             plt.legend()
 
-        #save fitparameters as table in txt file
-        if fitparamsname!=None:
-            table=np.empty((len(parameters)+1,3), dtype=object)
-            table[0,0]=""
-            table[0,1:3]=["Value", "Error"]
-            table[1, 0] = "Offset"
-            for i in range(0,len(parameters)-1,3):
-                table[i+2,0]=f"Gaussian {int(i/3+1)}: Amplitude"
-                table[i+3, 0] = f"Gaussian {int(i/3+1)}: Mean"
-                table[i+4, 0] = f"Gaussian {int(i/3+1)}: SDV"
-            print(len(parameters)-1)
-            table[1:,1:3]=parameters
+        #print fitparameters and optionally save fitparameters as table in txt file
+
+        table=np.empty((len(parameters)+1,3), dtype=object)
+        table[0,0]=""
+        table[0,1:3]=["Value", "Error"]
+        table[1, 0] = "Offset"
+        table[1:, 1:3] = parameters
+        print('Offset:')
+        print(table[1,1:3])
+        for i in range(0,len(parameters)-1,3):
+            print(f'Gaussian {int(i/3+1)} (Amplitude, Mean, SDV):')
+            print(table[int(i/3+1):int(i/3+4),1:3])
+            table[i+2,0]=f"Gaussian {int(i/3+1)}: Amplitude"
+            table[i+3, 0] = f"Gaussian {int(i/3+1)}: Mean"
+            table[i+4, 0] = f"Gaussian {int(i/3+1)}: SDV"
+
+        if fitparamsname != None:
             np.savetxt(fitparamsname,table,delimiter="\t", fmt="%s")
 
         #return fitparameters for further use
         return parameters
 
-    def plot_save(self, xlabel, ylabel, title, savename):
+    def plot_save(self, xlabel='x', ylabel='y', datalegend='Data', fitlegend='Fit', title='', savename='gaussian_fit.pdf', grid=True):
+
+
+        plt.clf()
+
         pass
 
 plt.clf()
