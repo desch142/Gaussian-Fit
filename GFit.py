@@ -13,6 +13,7 @@ class GFit():
         self.y = y
         self.x_err = x_err
         self.y_err = y_err
+        self.fitparams = None
 
     def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=False,
                                stepsize=0.01, max_iter=1000, plotcheck=False):
@@ -78,7 +79,7 @@ class GFit():
         # proposal for the dip find
         dps = [np.argmin(y_data[d[0]:d[1]]) + pks[idx] for idx, d in enumerate(zip(pks[:-1], pks[1:]))]
 
-        print(f"Dipfinder Message: {len(dps)}/{number_peaks-1} dips found")
+        print(f"Dipfinder Message: {len(dps)}/{number_peaks-1} dips found \n")
 
         # x- and y-values of dips for plotting
         x_dps, y_dps = self.x[dps], y_data[dps]
@@ -183,16 +184,6 @@ class GFit():
             fit = popt  # value
             dfit = np.sqrt(pconv.diagonal())  # error
             parameters = np.column_stack((fit, dfit))
-
-
-
-            #fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
-            #fitted_y = self.fitfunction(fitted_x, *popt)
-
-            # plot fit and data
-            #pl.plot(x, y, linestyle='none', marker='+', label='Daten')
-            #plt.plot(fitted_x, fitted_y, linestyle='-',color="black", marker=' ', label='Fit')
-            #plt.legend()
         else:
             #fit using ODR
             #scipy odr requires a different format for the fit function
@@ -222,6 +213,7 @@ class GFit():
         table[0,1:3]=["Value", "Error"]
         table[1, 0] = "Offset"
         table[1:, 1:3] = parameters
+        print('Fit successfull, the fit parameters are: \n')
         print('Offset:')
         print(table[1,1:3])
         for i in range(0,len(parameters)-1,3):
@@ -235,24 +227,39 @@ class GFit():
             np.savetxt(fitparamsname,table,delimiter="\t", fmt="%s")
 
         #return fitparameters for further use
+        self.fitparams=parameters
+
         return parameters
 
     def plot_save(self, xlabel='x', ylabel='y', datalegend='Data', fitlegend='Fit', title='', savename='gaussian_fit.pdf', grid=True):
+        #Plot data with errorbars
+        plt.figure(figsize=(5, 3))
+        plt.errorbar(x=self.x,xerr=self.x_err, y=self.y,yerr=self.y_err,linestyle='none',marker='+', elinewidth=1, capsize=1.5, capthick=1, label=datalegend)
 
+        fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
+        fitted_y = self.fitfunction(fitted_x, *self.fitparams[:,0])
+
+        plt.plot(fitted_x, fitted_y, linestyle='-', color='black', marker=' ', label=fitlegend, zorder=10)
+
+        plt.xlabel(xlabel)
+        plt.ylabel(ylabel)
+        plt.legend()
+        plt.title(title)
+        plt.grid()
+        plt.tight_layout()
+        plt.savefig(savename)
 
         plt.clf()
 
-        pass
-
 plt.clf()
-np.random.seed(1231)
+#np.random.seed(1231)
 from noisy_data_create import noisy_gaussian
 #create random sum of 5 gaussians
 
-x = np.linspace(0,10,200)
+x = np.linspace(0,10,150)
 y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
-xerr = np.random.rand(len(x))
-yerr = np.random.rand(len(x))
+xerr = np.random.rand(len(x))*0.3
+yerr = np.random.rand(len(x))*0.3
 
 
 #test peak/dipfinder
@@ -267,8 +274,11 @@ guess=test.get_guess(pks, dps, plotcheck=False)
 #do fit and save fitparams in txt file
 fitparams=test.fit(guess, plotcheck=True, fitparamsname='test_fitparams.txt')
 
+#save plot
+test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
 
-#TODO: write plot function that saves data+fit to pdf file
 
-plt.show()
+
+
+#plt.show()
 
