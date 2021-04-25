@@ -98,7 +98,7 @@ class GFit():
 
     def smoothing(self, window_size):
         """
-        This method smooths data using np.convolve. It is useful if the data is ver noisy. In otherwords a moving average
+        This method smooths data using np.convolve. It is useful if the data is ver noisy. In other words a moving average
         is calculated to smooth the data.
         :param window_size: int; parameter for the window size of the convolution
         :return: smoothed data
@@ -109,12 +109,12 @@ class GFit():
 
     def get_guess(self, peaks_idx, dips_idx, plotcheck=False):
         """
-        This method guesses the means and the variances for the gaussian fit
+        This method guesses the amplitudes, means and the variances for the gaussian fit
         :param peaks_idx: list int; a list/numpy array of indices where the peaks lie
         :param dips_idx: list int; a list/numpy array of indices where the infered dips lie
         :param plotcheck: boolean; if the 'dip' before the first peak and the 'dip' after last peak should be displayed
         for sanity checks
-        :return: returns a list of tuples where each tuple consists of (mean, var) as a guess for the parameters for the fit
+        :return: returns a list containing a single offset and a list of triples where each triple consists of (amp, mean, var) as a guess for the parameters for the fit
         """
 
         # First add 'dips' before the first peak and after the last peak
@@ -165,6 +165,12 @@ class GFit():
         return guess
 
     def fitfunction(self, x, *params):
+        """
+        This method returns the value of a sum of gaussians and is used for the gaussian fit
+        :param x: float; the argument at which to evaluate the sum of gaussians
+        :param *params: list float; a list containing a global offset and amplitude, mean and variance for each gaussian
+        :return: returns the value y of the sum of gaussians at argument x
+        """
         y=0
         #add offset
         y+=params[0]
@@ -176,6 +182,13 @@ class GFit():
         return y
 
     def fit(self, guess, plotcheck=False, fitparamsname=None):
+        """
+        This method fits the data with a sum of gaussians and returns the fit parameters
+        :param guess: list; list containing starting values for the fit of the gaussian amplitude (guess should be obtained using the method get_guess)
+        :param plotcheck: boolean; plot of the fitted function for sanity checks
+        :param fitparamsname: string; filename for txt file in which the fit parameters can be saved
+        :return: returns the determined fit parameters and their errors as list
+        """
         #Use standard Chi2 fit if there are no x-errors:
         if self.x_err is None:
             popt, pconv = curve_fit(self.fitfunction, self.x, self.y,sigma=self.y_err, p0=guess, maxfev=10**6)
@@ -185,8 +198,8 @@ class GFit():
             dfit = np.sqrt(pconv.diagonal())  # error
             parameters = np.column_stack((fit, dfit))
         else:
-            #fit using ODR
-            #scipy odr requires a different format for the fit function
+            #fit using ODR if there are x-errors
+            #define new fit function since scipy odr requires a different format for the fit function
             def fitfunction_odr(p, x):
                 return self.fitfunction(x, *p)
             func=odr.Model(fitfunction_odr)
@@ -197,7 +210,7 @@ class GFit():
             dfit=output.sd_beta
             parameters = np.column_stack((fit, dfit))
 
-        #plot fit
+        #plot fit for sanity checks
         if plotcheck==True:
             fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
             fitted_y = self.fitfunction(fitted_x, *fit)
@@ -232,6 +245,16 @@ class GFit():
         return parameters
 
     def plot_save(self, xlabel='x', ylabel='y', datalegend='Data', fitlegend='Fit', title='', savename='gaussian_fit.pdf', grid=True):
+        """
+        This method plots the data together with the fit with customizable labels, title and legend and saves plot as file
+        :param xlabel: string; label of x-axis
+        :param ylabel: string; label of y-axis
+        :param datalegend: string; legend of the data points
+        :param fitlegend: string; legend of the fit
+        :param title: string; title of plot
+        :param savename: string; filename to safe plot - we recommend to use .pdf to obtain a vector graphic
+        :return: returns None
+        """
         #Plot data with errorbars
         plt.figure(figsize=(5, 3))
         plt.errorbar(x=self.x,xerr=self.x_err, y=self.y,yerr=self.y_err,linestyle='none',marker='+', elinewidth=1, capsize=1.5, capthick=1, label=datalegend)
@@ -248,8 +271,10 @@ class GFit():
         plt.grid()
         plt.tight_layout()
         plt.savefig(savename)
-
         plt.clf()
+        print('Plot successfully saved!')
+
+        return None
 
 plt.clf()
 #np.random.seed(1231)
