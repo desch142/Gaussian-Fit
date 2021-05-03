@@ -15,7 +15,7 @@ class GFit():
         self.y_err = y_err
         self.fitparams = None
 
-    def get_peaks_dips_default(self, number_peaks, window_size=None, smoothing=False, show_smoothing=False,
+    def get_peaks_dips(self, number_peaks, window_size=None, smoothing=False, show_smoothing=False,
                                stepsize=0.01, max_iter=1000, plotcheck=False):
         """
         This method aims to find a wanted number of peaks and automatically finds peaks for further computations
@@ -86,7 +86,7 @@ class GFit():
 
         # optionally plot data, smoothed_data, peaks and dips
         if plotcheck:
-            plt.plot(self.x, self.y, label="Data")
+            plt.plot(self.x, self.y,color='C0', label="Data")
             if smoothing & show_smoothing:
                 plt.plot(self.x, y_data, label="Smoothed Data")
             plt.plot(x_pks, y_pks,linestyle='', marker="^",markersize=12, label=f"{n}/{number_peaks} Peaks")
@@ -152,8 +152,10 @@ class GFit():
         guess_gaussians = [g for g in zip(amp, mean, var)]
 
         guess=np.append(guess_offset, guess_gaussians)
+        print('Guess successfull \n')
 
         if plotcheck:
+            plt.plot(self.x, self.y,color='C0')
             plt.plot(self.x[lft_idx], self.y[lft_idx], '^', markersize=12,label='left')
             plt.plot(self.x[rght_idx], self.y[rght_idx], '^', markersize=12, label='right')
             #plot guess
@@ -212,6 +214,8 @@ class GFit():
 
         #plot fit for sanity checks
         if plotcheck==True:
+            plt.plot(self.x, self.y,color='C0')
+
             fitted_x = np.linspace(np.min(self.x), np.max(self.x), 10000)
             fitted_y = self.fitfunction(fitted_x, *fit)
 
@@ -231,7 +235,7 @@ class GFit():
         print(table[1,1:3])
         for i in range(0,len(parameters)-1,3):
             print(f'Gaussian {int(i/3+1)} (Amplitude, Mean, SDV):')
-            print(table[int(i/3+1):int(i/3+4),1:3])
+            print(table[int(i+2):int(i+5),1:3])
             table[i+2,0]=f"Gaussian {int(i/3+1)}: Amplitude"
             table[i+3, 0] = f"Gaussian {int(i/3+1)}: Mean"
             table[i+4, 0] = f"Gaussian {int(i/3+1)}: SDV"
@@ -272,38 +276,38 @@ class GFit():
         plt.tight_layout()
         plt.savefig(savename)
         plt.clf()
-        print('Plot successfully saved!')
+        print('\n Plot successfully saved')
 
         return None
 
-plt.clf()
-np.random.seed(1231)
-from noisy_data_create import noisy_gaussian
-#create random sum of 5 gaussians
+test=False
+if test==True:
+    plt.clf()
+    np.random.seed(1231)
+    from noisy_data_create import noisy_gaussian
+    #create random sum of 5 gaussians
 
-x = np.linspace(0,10,150)
-y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
-xerr = np.random.rand(len(x))*0.3
-yerr = np.random.rand(len(x))*0.3
-
-
-#test peak/dipfinder
-test = GFit(x, y,  x_err=xerr, y_err=yerr)
-
-#find peaks+dips and plot
-pks, dps = test.get_peaks_dips_default(4, smoothing=False, window_size=150, plotcheck=True, show_smoothing=False)
-
-#get guess
-guess=test.get_guess(pks, dps, plotcheck=False)
-
-#do fit and save fitparams in txt file
-fitparams=test.fit(guess, plotcheck=True, fitparamsname='test_fitparams.txt')
-
-#save plot
-test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
+    x = np.linspace(0,10,150)
+    y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
+    xerr = np.random.rand(len(x))*0.3
+    yerr = np.random.rand(len(x))*0.3
+    sampledata=np.column_stack([x,xerr,y,yerr])
+    #np.savetxt('example_data.txt', sampledata)
 
 
+    #test peak/dipfinder
+    test = GFit(x, y,  x_err=xerr, y_err=yerr)
 
+    #find peaks+dips and plot
+    pks, dps = test.get_peaks_dips(4, smoothing=False, window_size=150, plotcheck=True, show_smoothing=False)
 
-#plt.show()
+    #get guess
+    guess=test.get_guess(pks, dps, plotcheck=True)
+
+    #do fit
+    fitparams=test.fit(guess, plotcheck=True)
+    plt.show()
+    plt.clf()
+    #save plot
+    test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
 
