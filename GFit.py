@@ -309,5 +309,5 @@ if test==True:
     plt.show()
     plt.clf()
     #save plot
-    test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
+    #test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
 
