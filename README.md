@@ -2,4 +2,4 @@
 
 See example_GFit.ipynb
 
-![Example plot](example_plot.jpg)
+![Example plot](./example_plot.jpg)
