@@ -1,5 +1,8 @@
 # Gaussian-Fit
 
-See example_GFit.ipynb
+Create gaussian fits like this:
 
 ![Example plot](./examples/example_plot.png "Example")
+
+Tutorial:
+See example_GFit.ipynb
