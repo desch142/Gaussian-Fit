@@ -1,8 +1,7 @@
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy import odr
-from scipy.signal import find_peaks, find_peaks_cwt, savgol_filter
-from scipy.ndimage.filters import uniform_filter1d
+from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import warnings
 
@@ -15,8 +14,8 @@ class GFit():
         self.y_err = y_err
         self.fitparams = None
 
-    def get_peaks_dips(self, number_peaks, window_size=None, smoothing=False, show_smoothing=False,
-                               stepsize=0.01, max_iter=1000, plotcheck=False):
+    def get_peaks_dips(self, number_peaks: int, window_size: int = None, smoothing: bool = False, show_smoothing: bool = False,
+                               stepsize=0.01, max_iter: int = 1000, plotcheck: bool = False):
         """
         This method aims to find a wanted number of peaks and automatically finds peaks for further computations
 
@@ -30,6 +29,16 @@ class GFit():
         :param plotcheck: Plot data and found peaks+dips to check whether peak/dipfind worked correctly
         :return: returns the indices of the peaks and dips
         """
+
+        if type(number_peaks) != int:
+            raise ValueError('Peak number is not of type int')
+
+        if type(max_iter) != int:
+            raise ValueError('Max iter is not of type int')
+
+        if window_size != None:
+            if type(window_size) != int:
+                raise ValueError('Window Size is not of type int')
 
 
         if smoothing:
@@ -63,18 +72,10 @@ class GFit():
         print(f"Peakfinder Message: {n}/{number_peaks} peaks found")
 
         #x- and y-values of peaks for plotting
-        x_pks, y_pks=self.x[pks], y_data[pks]
+        x_pks, y_pks = self.x[pks], y_data[pks]
 
         #####Find dips#####
         # Find the number_peaks-1 dips by finding the minimum in between the peaks
-
-        # list to store dips indices
-        #dps=[]
-
-        #for i in range(0, len(pks)-1):
-            #find index of dip between pks[i] and pks[i+1] and append to dps list
-            #add pks[i] since index of y_data_btw starts at zero
-        #    dps.append(np.argmin(y_data[pks[i]:pks[i+1]])+pks[i])
 
         # proposal for the dip find
         dps = [np.argmin(y_data[d[0]:d[1]]) + pks[idx] for idx, d in enumerate(zip(pks[:-1], pks[1:]))]
@@ -96,7 +97,7 @@ class GFit():
         return [pks, dps]
 
 
-    def smoothing(self, window_size):
+    def smoothing(self, window_size:int):
         """
         This method smooths data using np.convolve. It is useful if the data is ver noisy. In other words a moving average
         is calculated to smooth the data.
@@ -107,7 +108,7 @@ class GFit():
         return y_data
 
 
-    def get_guess(self, peaks_idx, dips_idx, plotcheck=False):
+    def get_guess(self, peaks_idx:list, dips_idx:list, plotcheck:bool = False):
         """
         This method guesses the amplitudes, means and the variances for the gaussian fit
         :param peaks_idx: list int; a list/numpy array of indices where the peaks lie
@@ -166,7 +167,7 @@ class GFit():
 
         return guess
 
-    def fitfunction(self, x, *params):
+    def fitfunction(self, x:float, *params):
         """
         This method returns the value of a sum of gaussians and is used for the gaussian fit
         :param x: float; the argument at which to evaluate the sum of gaussians
@@ -183,7 +184,7 @@ class GFit():
 
         return y
 
-    def fit(self, guess, plotcheck=False, fitparamsname=None):
+    def fit(self, guess:list, plotcheck:bool = False, fitparamsname:str = None):
         """
         This method fits the data with a sum of gaussians and returns the fit parameters
         :param guess: list; list containing starting values for the fit of the gaussian amplitude (guess should be obtained using the method get_guess)
@@ -279,35 +280,4 @@ class GFit():
         print('\n Plot successfully saved')
 
         return None
-
-test=False
-if test==True:
-    plt.clf()
-    np.random.seed(1231)
-    from noisy_data_create import noisy_gaussian
-    #create random sum of 5 gaussians
-
-    x = np.linspace(0,10,150)
-    y = noisy_gaussian(x, amp=5+np.random.rand(4)*5, mu=np.random.rand(4)*1+np.linspace(1.5,8.5,4), sig=0.05+np.random.rand(4))*0.5
-    xerr = np.random.rand(len(x))*0.3
-    yerr = np.random.rand(len(x))*0.3
-    sampledata=np.column_stack([x,xerr,y,yerr])
-    #np.savetxt('example_data.txt', sampledata)
-
-
-    #test peak/dipfinder
-    test = GFit(x, y,  x_err=xerr, y_err=yerr)
-
-    #find peaks+dips and plot
-    pks, dps = test.get_peaks_dips(4, smoothing=False, window_size=150, plotcheck=True, show_smoothing=False)
-
-    #get guess
-    guess=test.get_guess(pks, dps, plotcheck=True)
-
-    #do fit
-    fitparams=test.fit(guess, plotcheck=True)
-    plt.show()
-    plt.clf()
-    #save plot
-    #test.plot_save(title='Test fit', xlabel='x test', ylabel='y test')
 
