@@ -275,7 +275,7 @@ class GFit():
         plt.title(title)
         plt.grid()
         plt.tight_layout()
-        plt.savefig(savename)
+        plt.savefig(savename, dpi=1200)
         plt.clf()
         print('\n Plot successfully saved')
 
